@@ -322,6 +322,23 @@ const grant_permission = async (req, res) => {
   }
 };
 
+const getUsers = async (req, res) => {
+  const permitted_users = [ADMIN_PERM, INSTRUCTOR_PERM];
+
+  if (!permitted_users.includes(req.role)) {
+    return res.send({
+      status: false,
+      message: "You are not authorized to view this!",
+    });
+  }
+  try {
+    const users = await userModel.find({}, { password: 0 });
+    return res.send({ status: true, data: users });
+  } catch (err) {
+    return res.send({ status: false, message: err.message });
+  }
+};
+
 const getRefreshToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
@@ -370,4 +387,5 @@ module.exports = {
   activateUser,
   grant_permission,
   getRefreshToken,
+  getUsers,
 };

@@ -9,6 +9,7 @@ const {
   activateUser,
   grant_permission,
   getRefreshToken,
+  getUsers,
 } = require("../controllers/user.controller");
 const {
   USER_SIGNUP,
@@ -19,12 +20,14 @@ const {
   ACTIVATE,
   GRANT_PERMISSION,
   GET_REFRESH,
+  GET_USERS,
 } = require("../constants");
 const { verifyAccessToken } = require("../jwt_helpers");
 
 router.post(USER_SIGNUP, signup);
 router.post(USER_SIGNIN, signin);
 router.get(ACTIVATE, activateUser);
+router.get(GET_USERS, verifyAccessToken, getUsers);
 router.post(USER_FORGOT_PASS, forgotPassword);
 router.post(USER_RESET_PASS, handleResetPassword);
 router.delete(USER_LOGOUT, logout);

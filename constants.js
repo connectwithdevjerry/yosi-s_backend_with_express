@@ -13,6 +13,7 @@ const USER_LOGOUT = "/logout";
 const ACTIVATE = "/activate/:token";
 const GRANT_PERMISSION = "/grant_user_permission";
 const GET_REFRESH = "/get_access";
+const GET_USERS = "/get_users";
 
 const CLASSES = "/classes";
 const CREATE_CLASS = "/create_class";
@@ -48,6 +49,7 @@ module.exports = {
   GET_CLASS,
   ACTIVATE,
   PUBLISH,
+  GET_USERS,
   JOIN_CLASS,
   GRANT_PERMISSION,
   GET_REFRESH,
