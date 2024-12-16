@@ -51,13 +51,21 @@ const get_classes_user = async (req, res) => {
 // this is separate because admin or instructor must also be able to view as user
 const get_classes_admin = async (req, res) => {
   const permitted_users = [ADMIN_PERM, INSTRUCTOR_PERM];
-  if (permitted_users.includes(req.role))
+  if (!permitted_users.includes(req.role))
     return res.send({
       status: false,
       message: "You do not have permission to view this!",
     });
-  const classes = await classModel.find({});
-  return res.send({ status: true, data: classes });
+  try {
+    const classes = await classModel.find({}).populate("students").exec();;
+    return res.send({ status: true, data: classes });
+  } catch (e) {
+    console.error("Error fetching classes:", e.message);
+    return res.send({
+      status: false,
+      message: "Error fetching classes! Kindly Reload",
+    });
+  }
 };
 
 const get_class = async (req, res) => {
@@ -239,14 +247,14 @@ const delete_class = async (req, res) => {
     });
 
   try {
-    const { uniqueRouteId } = uniqueRouteIdSchema.validateAsync({
+    const { uniqueRouteId } = await uniqueRouteIdSchema.validateAsync({
       uniqueRouteId: req.params.id,
     });
 
     const filter = { uniqueRouteId };
-    const delete_resp = await classModel.deleteOne(filter);
+    const delete_resp = await classModel.findOneAndDelete(filter);
 
-    if (delete_resp.acknowledged) {
+    if (delete_resp) {
       return res.send({ status: true, message: "Class deleted successfully!" });
     }
 
