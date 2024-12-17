@@ -20,7 +20,11 @@ mongoose
     console.log("mongodb could not connect, try again", err);
   });
 
-const allowedOrigins = ["*"];
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:3000",
+  "http://localhost:3001",
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
