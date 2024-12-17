@@ -21,7 +21,8 @@ mongoose
   });
 
 const corsOptions = {
-  origin: ["https://yosi-frontend-with-react.vercel.app", "http://localhost:5173"],
+  // origin: ["https://yosi-frontend-with-react.vercel.app", "http://localhost:5173"],
+  origin: "https://yosi-frontend-with-react.vercel.app",
   credentials: true,
   optionSuccessStatus: 200,
 };
