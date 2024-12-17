@@ -9,6 +9,7 @@ const {
   get_class,
   publish_class,
   join_class,
+  remove_me_from_class,
 } = require("../controllers/classes.controller");
 const {
   CREATE_CLASS,
@@ -19,6 +20,7 @@ const {
   GET_CLASS,
   PUBLISH,
   JOIN_CLASS,
+  REMOVE_FROM_CLASS,
 } = require("../constants");
 const { verifyAccessToken } = require("../jwt_helpers");
 
@@ -28,6 +30,7 @@ router.post(CREATE_CLASS, verifyAccessToken, create_class);
 router.get(GET_CLASSES_ADMIN, verifyAccessToken, get_classes_admin); // verify that user is authenticated and is an admin and instructor
 router.put(UPDATE_CLASS, verifyAccessToken, update_class);
 router.delete(DELETE_CLASS, verifyAccessToken, delete_class);
+router.delete(REMOVE_FROM_CLASS, verifyAccessToken, remove_me_from_class);
 router.put(JOIN_CLASS, verifyAccessToken, join_class);
 router.post(PUBLISH, verifyAccessToken, publish_class);
 

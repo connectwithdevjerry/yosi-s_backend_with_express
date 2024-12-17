@@ -1,7 +1,7 @@
 const { ADMIN_PERM, INSTRUCTOR_PERM } = require("../constants");
 const classModel = require("../models/classes.model");
 const userModel = require("../models/user.model");
-const { transporter } = require("../nodemailerObject");
+const transporter = require("../nodemailerObject");
 const {
   createClassSchema,
   updateClassSchema,
@@ -38,10 +38,7 @@ const create_class = async (req, res) => {
 const get_classes_user = async (req, res) => {
   try {
     const classes = await classModel
-      .find(
-        { published: true },
-        { students: 0, toBeUpdatedByInstructor: 0, published: 0 }
-      )
+      .find({ published: true }, { toBeUpdatedByInstructor: 0, published: 0 })
       .populate("instructor")
       .exec();
     // const classes = await classModel.find({});
@@ -79,7 +76,11 @@ const get_class = async (req, res) => {
       uniqueRouteId: req.params.id,
     });
 
-    const class_to_get = await classModel.findOne({ uniqueRouteId });
+    const class_to_get = await classModel
+      .findOne({ uniqueRouteId })
+      .populate("instructor")
+      .exec();
+    console.log(class_to_get);
 
     if (!class_to_get)
       return res.send({
@@ -281,6 +282,32 @@ const delete_class = async (req, res) => {
   }
 };
 
+const remove_me_from_class = async (req, res) => {
+  try {
+    const { uniqueRouteId } = await uniqueRouteIdSchema.validateAsync({
+      uniqueRouteId: req.params.id,
+    });
+
+    const filter = { uniqueRouteId };
+    const delete_resp = await classModel.findOne(filter);
+    if (!delete_resp) {
+      return res.send({ status: false, message: "Class not found!" });
+    }
+
+    const updated_students = delete_resp.students.filter(
+      (student) => student != req.user
+    );
+
+    delete_resp.students = updated_students;
+    await delete_resp.save();
+
+    return res.send({ status: true, message: "Class deleted successfully!" });
+  } catch (error) {
+    console.log(error.message);
+    return res.send({ status: false, message: error.message });
+  }
+};
+
 const join_class = async (req, res) => {
   try {
     const { uniqueRouteId } = await uniqueRouteIdSchema.validateAsync({
@@ -301,35 +328,40 @@ const join_class = async (req, res) => {
     class_to_join.students.push(req.user);
     await class_to_join.save();
 
-    const classTitle = class_to_join.title;
-    const firstName = class_to_join.firstName;
-
-    const user = await userModel.findOne({ _id: req.user });
-    const email = user.email;
-
-    let mailOptions = {
-      from: process.env.MY_EMAIL_USER,
-      to: email,
-      subject: `${firstName}, Welcome aboard!`,
-      text: `Hi ${firstName}, this is to notify you that you have successfully joined the ${classTitle} dance class.
-      We'll be happy having you at our class. We'll keep communication with you from this email address!
-      `,
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log({ error });
-        return res.send({ status: false, message: "Failed to send email" });
-      }
-      console.log("Email sent: " + info.response);
-
-      return res.send({
-        status: true,
-        message: "You have joined the class! We'll keep contact by mails.",
-      });
+    return res.send({
+      status: true,
+      message: "You have joined the class!",
     });
+
+    // const classTitle = class_to_join.title;
+    // const firstName = class_to_join.firstName;
+
+    // const user = await userModel.findOne({ _id: req.user });
+    // const email = user.email;
+
+    // let mailOptions = {
+    //   from: process.env.MY_EMAIL_USER,
+    //   to: email,
+    //   subject: `${firstName}, Welcome aboard!`,
+    //   text: `Hi ${firstName}, this is to notify you that you have successfully joined the ${classTitle} dance class.
+    //   We'll be happy having you at our class. We'll keep communication with you from this email address!
+    //   `,
+    // };
+
+    // await transporter.sendMail(mailOptions, (error, info) => {
+    //   if (error) {
+    //     console.log({ error });
+    //     return res.send({ status: false, message: "Failed to send email" });
+    //   }
+    //   console.log("Email sent: " + info.response);
+
+    //   return res.send({
+    //     status: true,
+    //     message: "You have joined the class! We'll keep contact by mails.",
+    //   });
+    // });
   } catch (err) {
-    console.log(err.message);
+    console.log(err);
     return res.send({ status: false, message: err.message });
   }
 };
@@ -343,4 +375,5 @@ module.exports = {
   get_class,
   publish_class,
   join_class,
+  remove_me_from_class,
 };

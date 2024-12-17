@@ -19,6 +19,7 @@ const CLASSES = "/classes";
 const CREATE_CLASS = "/create_class";
 const PUBLISH = "/publish/:id";
 const GET_CLASS = "/get_class/:id";
+const REMOVE_FROM_CLASS = "/remove_from_class/:id";
 const GET_CLASSES = "/get_classes";
 const GET_CLASSES_ADMIN = "/get_classes_admin";
 const UPDATE_CLASS = "/update_class/:id";
@@ -46,6 +47,7 @@ module.exports = {
   GET_CLASSES_ADMIN,
   UPDATE_CLASS,
   DELETE_CLASS,
+  REMOVE_FROM_CLASS,
   GET_CLASS,
   ACTIVATE,
   PUBLISH,
