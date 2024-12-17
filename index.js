@@ -21,8 +21,8 @@ mongoose
   });
 
 const corsOptions = {
-  origin: process.env.FRONTEND_URL,
-  credentials: true, //access-control-allow-credentials:true
+  origin: ["https://yosi-frontend-with-react.vercel.app/"],
+  credentials: true,
   optionSuccessStatus: 200,
 };
 
