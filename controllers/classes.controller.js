@@ -1,6 +1,7 @@
 const { ADMIN_PERM, INSTRUCTOR_PERM } = require("../constants");
 const classModel = require("../models/classes.model");
 const userModel = require("../models/user.model");
+const { transporter } = require("../nodemailerObject");
 const {
   createClassSchema,
   updateClassSchema,
@@ -36,10 +37,13 @@ const create_class = async (req, res) => {
 // this is separate because admin or instructor must also be able to view as user
 const get_classes_user = async (req, res) => {
   try {
-    const classes = await classModel.find(
-      { published: true },
-      { students: 0, toBeUpdatedByInstructor: 0, published: 0, instructor: 0 }
-    );
+    const classes = await classModel
+      .find(
+        { published: true },
+        { students: 0, toBeUpdatedByInstructor: 0, published: 0 }
+      )
+      .populate("instructor")
+      .exec();
     // const classes = await classModel.find({});
     return res.send({ status: true, data: classes });
   } catch (error) {
@@ -57,7 +61,8 @@ const get_classes_admin = async (req, res) => {
       message: "You do not have permission to view this!",
     });
   try {
-    const classes = await classModel.find({}).populate("students").exec();;
+    const classes = await classModel.find({}).populate("students").exec();
+    console.log({ classes });
     return res.send({ status: true, data: classes });
   } catch (e) {
     console.error("Error fetching classes:", e.message);
@@ -100,15 +105,23 @@ const update_class = async (req, res) => {
   const permitted_user = [INSTRUCTOR_PERM, ADMIN_PERM];
 
   try {
-    const { uniqueRouteId } = uniqueRouteIdSchema.validateAsync({
+    const { uniqueRouteId } = await uniqueRouteIdSchema.validateAsync({
       uniqueRouteId: req.params.id,
     });
 
     const filter = { uniqueRouteId };
     const class_to_update = await classModel.findOne(filter);
 
+    if (!class_to_update)
+      return res.send({
+        status: false,
+        message: "Could not find class with this identifier",
+      });
+
+    console.log({ class_to_update });
+
     const either_is_permitted =
-      class_to_update.instructor == req.user || req.role === ADMIN_PERM;
+      class_to_update.instructor === req.user || req.role === ADMIN_PERM;
 
     if (
       permitted_user.includes(req.role) &&
@@ -117,8 +130,6 @@ const update_class = async (req, res) => {
     ) {
       try {
         const result = await updateClassSchema.validateAsync(req.body);
-
-        console.log(class_to_update.instructor);
 
         // check if admin gave instructor permission to update certain fields before updating
         if (req.role === INSTRUCTOR_PERM) {
@@ -130,6 +141,8 @@ const update_class = async (req, res) => {
             style: updateStyle,
             no_of_max_signups: update_no_of_max_signups,
           } = class_to_update.toBeUpdatedByInstructor;
+
+          class_to_update.published = result.published;
 
           if (updateDescription)
             class_to_update.description = result.description;
@@ -181,6 +194,8 @@ const update_class = async (req, res) => {
         class_to_update.toBeUpdatedByInstructor.venue = _h(result.updateVenue);
         class_to_update.toBeUpdatedByInstructor.style = _h(result.update_style);
 
+        class_to_update.published = result.published;
+
         await class_to_update.save();
 
         return res.send({
@@ -200,6 +215,7 @@ const update_class = async (req, res) => {
       });
     }
   } catch (errors) {
+    console.log(errors);
     return res.send({ status: false, message: errors.message });
   }
 };
@@ -285,7 +301,33 @@ const join_class = async (req, res) => {
     class_to_join.students.push(req.user);
     await class_to_join.save();
 
-    return res.send({ status: true, message: "You have joined the class!" });
+    const classTitle = class_to_join.title;
+    const firstName = class_to_join.firstName;
+
+    const user = await userModel.findOne({ _id: req.user });
+    const email = user.email;
+
+    let mailOptions = {
+      from: process.env.MY_EMAIL_USER,
+      to: email,
+      subject: `${firstName}, Welcome aboard!`,
+      text: `Hi ${firstName}, this is to notify you that you have successfully joined the ${classTitle} dance class.
+      We'll be happy having you at our class. We'll keep communication with you from this email address!
+      `,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log({ error });
+        return res.send({ status: false, message: "Failed to send email" });
+      }
+      console.log("Email sent: " + info.response);
+
+      return res.send({
+        status: true,
+        message: "You have joined the class! We'll keep contact by mails.",
+      });
+    });
   } catch (err) {
     console.log(err.message);
     return res.send({ status: false, message: err.message });
