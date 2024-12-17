@@ -23,7 +23,7 @@ mongoose
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:3000",
-  "http://localhost:3001",
+  "http://localhost:10000",
 ];
 
 const corsOptions = {
