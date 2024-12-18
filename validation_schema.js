@@ -7,7 +7,7 @@ const authSchema = Joi.object({
 
 const signUpSchema = Joi.object({
   email: Joi.string().email().lowercase().required(),
-  password: Joi.string().min(5).required(),
+  password: Joi.string().required(),
   firstName: Joi.string().required(),
   lastName: Joi.string().required(),
 });

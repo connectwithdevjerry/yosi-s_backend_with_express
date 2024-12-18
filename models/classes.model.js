@@ -23,6 +23,16 @@ const classSchema = mongoose.Schema({
       ref: "user_collection",
     },
   ],
+  quotaPerStudent: [
+    {
+      student: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "user_collection",
+        required: true,
+      },
+      quota: { type: Number, minValue: 1 },
+    },
+  ],
   toBeUpdatedByInstructor: {
     description: { type: Boolean, default: false },
     dateAndTime: { type: Boolean, default: false },

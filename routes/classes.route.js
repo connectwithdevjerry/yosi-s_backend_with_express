@@ -10,6 +10,7 @@ const {
   publish_class,
   join_class,
   remove_me_from_class,
+  get_filtered_classes,
 } = require("../controllers/classes.controller");
 const {
   CREATE_CLASS,
@@ -21,11 +22,13 @@ const {
   PUBLISH,
   JOIN_CLASS,
   REMOVE_FROM_CLASS,
+  GET_FILTERED_CLASSES,
 } = require("../constants");
 const { verifyAccessToken } = require("../jwt_helpers");
 
 router.get(GET_CLASS, get_class);
 router.get(GET_CLASSES, get_classes_user); // no need for any form of authentication and authorization checks
+router.get(GET_FILTERED_CLASSES, get_filtered_classes); // no need for any form of authentication and authorization checks
 router.post(CREATE_CLASS, verifyAccessToken, create_class);
 router.get(GET_CLASSES_ADMIN, verifyAccessToken, get_classes_admin); // verify that user is authenticated and is an admin and instructor
 router.put(UPDATE_CLASS, verifyAccessToken, update_class);

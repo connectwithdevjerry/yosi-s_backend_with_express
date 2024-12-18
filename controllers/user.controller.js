@@ -13,6 +13,7 @@ const {
   forgotPasswordSchema,
   resetPasswordSchema,
   grantPermSchema,
+  uniqueRouteIdSchema,
 } = require("../validation_schema");
 const {
   REFRESH_TOKEN,
@@ -21,6 +22,7 @@ const {
   INSTRUCTOR_PERM,
 } = require("../constants");
 const client = require("../jwt_db_access");
+const classModel = require("../models/classes.model");
 
 const myPayload = (user) => {
   const payload = {
@@ -77,6 +79,104 @@ const signup = async (req, res, next) => {
     });
 
     return;
+  } catch (error) {
+    if (error.isJoi === true) {
+      error.status = 422;
+      console.log(error.message);
+      return res.send({ status: false, message: error.message });
+    }
+    next(error);
+  }
+};
+
+const sendEmail = (email, firstName, danceClassName, instructorName) => {
+  let mailOptions = {
+    from: process.env.MY_EMAIL_USER,
+    to: email,
+    subject: "Hi " + instructorName,
+    text:
+      "You just signed up " +
+      firstName +
+      " for " +
+      danceClassName +
+      " dance class.",
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log({ error });
+      return res.send({
+        status: false,
+        message: "Failed to send confirmation email!",
+      });
+    }
+  });
+};
+
+const admin_super_signup = async (req, res, next) => {
+  // also signup, register
+
+  try {
+    const { uniqueRouteId } = await uniqueRouteIdSchema.validateAsync({
+      uniqueRouteId: req.params.id,
+    });
+
+    const classToAddStudent = await classModel.findOne({
+      uniqueRouteId,
+    });
+
+    if (!classToAddStudent) {
+      return res.send({ status: false, message: "Class not found!" });
+    }
+
+    if (
+      classToAddStudent.students.length >= classToAddStudent.no_of_max_signups
+    )
+      return res.send({
+        status: false,
+        message: "Class is at maximum capacity!",
+      });
+
+    const instructor = await userModel.findById(req.user);
+
+    const result = await signUpSchema.validateAsync(req.body);
+
+    const isUser = await userModel.findOne({ email: result.email });
+
+    if (isUser) {
+      classToAddStudent.students.push(isUser._id);
+      await classToAddStudent.save();
+
+      sendEmail(
+        instructor.email,
+        isUser.firstName,
+        classToAddStudent.title,
+        instructor.firstName
+      );
+
+      return res.send({
+        status: true,
+        message: "Student successfully added to class",
+      });
+    }
+
+    const user = new userModel(result);
+    const createdUser = await user.save();
+
+    classToAddStudent.students.push(createdUser._id);
+    await classToAddStudent.save();
+
+    sendEmail(
+      instructor.email,
+      createdUser.firstName,
+      classToAddStudent.title,
+      instructor.firstName
+    );
+
+    return res.send({
+      status: true,
+      message: "New Student successfully added to class",
+    });
   } catch (error) {
     if (error.isJoi === true) {
       error.status = 422;
@@ -388,4 +488,5 @@ module.exports = {
   grant_permission,
   getRefreshToken,
   getUsers,
+  admin_super_signup,
 };
