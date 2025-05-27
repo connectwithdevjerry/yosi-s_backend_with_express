@@ -388,6 +388,8 @@ const join_class = async (req, res) => {
       });
     }
 
+    
+
     class_to_join.no_of_current_signups = capacityAfterJoined;
 
     class_to_join.students.push(req.user);
